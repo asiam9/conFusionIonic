@@ -1,12 +1,13 @@
 'use strict';
 
 angular.module('conFusion.services', ['ngResource'])
+
 	.constant("baseURL", "http://localhost:3000/")
 
 	.service('menuFactory', ['$resource', 'baseURL', function($resource, baseURL) {
 		this.getDishes = function(){
-	        return $resource(baseURL+"dishes/:id", null, {'update':{method:'PUT' }});
-	    };
+			return $resource(baseURL+"dishes/:id", null, {'update':{method:'PUT' }});
+		};
 
 		this.getPromotion = function(){
 			return $resource(baseURL+"promotions/:id", null, {'update':{method:'PUT' }});
@@ -27,5 +28,25 @@ angular.module('conFusion.services', ['ngResource'])
 			return $resource(baseURL+"feedback/:id", null, {'update':{method:'PUT' }});
 		};
 		return fbfac;
+	}])
+
+	.factory('favoriteFactory', ['$resource', 'baseURL', function ($resource, baseURL) {
+		var favFac = {};
+		var favorites = [];
+		favFac.addToFavorites = function (index) {
+			for (var i = 0; i < favorites.length; i++) {
+				if (favorites[i].id == index) return;
+			}
+			favorites.push({id: index});
+		};
+		favFac.deleteFromFavorites = function (index) {
+			for (var i = 0; i < favorites.length; i++) {
+				if (favorites[i].id == index) favorites.splice(i, 1);
+			}
+		};
+		favFac.getFavorites = function () {
+			return favorites;
+		};
+		return favFac;
 	}])
 ;
