@@ -1,6 +1,6 @@
 angular.module('conFusion.controllers', [])
 
-	.controller('AppCtrl', function ($scope, $ionicModal, $timeout, $localStorage, $ionicPlatform, $cordovaCamera) {
+	.controller('AppCtrl', function ($scope, $ionicModal, $timeout, $localStorage, $ionicPlatform, $cordovaCamera, $cordovaImagePicker) {
 
 		// With the new view caching in Ionic, Controllers are only called
 		// when they are recreated or on app start, instead of every page change.
@@ -105,6 +105,20 @@ angular.module('conFusion.controllers', [])
 				});
 				$scope.registerform.show();
 			};
+			$scope.getPictureFromGallery = function(){
+				$scope.registerform.show();
+				var galleryOptions = {
+					maximumImagesCount: 1,
+					width: 100,
+					height: 100,
+					quality: 50
+				};
+				$cordovaImagePicker.getPictures(galleryOptions).then(function(results){
+					$scope.registration.imgSrc = results[0];
+				}, function(err) {
+					console.log(err);
+				});
+			}
 		});
 	})
 
@@ -176,7 +190,7 @@ angular.module('conFusion.controllers', [])
 		};
 	}])
 
-	.controller('DishDetailController', ['$scope', '$stateParams', 'dish', 'menuFactory', 'favoriteFactory', 'baseURL', '$ionicPopover', '$ionicModal', function ($scope, $stateParams, dish, menuFactory, favoriteFactory, baseURL, $ionicPopover, $ionicModal) {
+	.controller('DishDetailController', ['$scope', '$stateParams', 'dish', 'menuFactory', 'favoriteFactory', 'baseURL', '$ionicPopover', '$ionicModal', '$ionicPlatform', '$cordovaLocalNotification', '$cordovaToast', function ($scope, $stateParams, dish, menuFactory, favoriteFactory, baseURL, $ionicPopover, $ionicModal, $ionicPlatform, $cordovaLocalNotification, $cordovaToast) {
 		$scope.baseURL = baseURL;
 		$scope.dish = dish;
 
@@ -191,6 +205,28 @@ angular.module('conFusion.controllers', [])
 		$scope.addDishToFavorites = function(){
 			favoriteFactory.addToFavorites($scope.dish.id);
 			$scope.popover.hide();
+
+			$ionicPlatform.ready(function () {
+				$cordovaLocalNotification
+					.schedule({
+						id: 1,
+						title: "Added Favorite",
+						text: $scope.dish.name
+					})
+					.then(function () {
+						console.log('Added Favorite '+$scope.dish.name);
+					}, function () {
+						console.log('Failed to add Notification ');
+					});
+
+				$cordovaToast
+					.show('Added Favorite '+$scope.dish.name, 'long', 'bottom')
+					.then(function (success) {
+					// success
+					}, function (error) {
+					// error
+					});
+			});
 		};
 
 		$scope.newComment = { rating:5, author:"", comment:"", date:"" };
@@ -245,7 +281,7 @@ angular.module('conFusion.controllers', [])
 		$scope.leaders = leaders;
 	}])
 
-	.controller('FavoritesController', ['$scope', 'dishes', 'favorites', 'favoriteFactory', 'baseURL', '$ionicListDelegate', '$ionicPopup', '$ionicLoading', '$timeout', function ($scope, dishes, favorites, favoriteFactory, baseURL, $ionicListDelegate, $ionicPopup, $ionicLoading, $timeout) {
+	.controller('FavoritesController', ['$scope', 'dishes', 'favorites', 'favoriteFactory', 'baseURL', '$ionicListDelegate', '$ionicPopup', '$ionicLoading', '$timeout', '$ionicPlatform', '$cordovaVibration', function ($scope, dishes, favorites, favoriteFactory, baseURL, $ionicListDelegate, $ionicPopup, $ionicLoading, $timeout, $ionicPlatform, $cordovaVibration) {
 		$scope.baseURL = baseURL;
 		$scope.shouldShowDelete = false;
 		$scope.favorites = favorites;
@@ -266,6 +302,9 @@ angular.module('conFusion.controllers', [])
 				if (res) {
 					console.log('Ok to delete');
 					favoriteFactory.deleteFromFavorites(index);
+					$ionicPlatform.ready(function () {
+						$cordovaVibration.vibrate(100);
+					});
 				} else {
 					console.log('Canceled delete');
 				}
